@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { useSession } from 'next-auth/react'
 import { ExtendedPost } from "@/types/db";
 
@@ -12,41 +12,47 @@ import axios from "axios";
 import Post from "./Post";
 
 interface PostFeedProps {
-  initialPosts: ExtendedPost[];
-  subredditName?: string;
+  initialPosts: ExtendedPost[]
+  subredditName?: string
 }
 
-const PostFeed:React.FC<PostFeedProps> = ({
-  initialPosts,
+const PostFeed: React.FC<PostFeedProps> = ({ 
+  initialPosts, 
   subredditName,
 }) => {
-  const { data: session } = useSession()
-
   const lastPostRef = useRef<HTMLElement>(null)
   const { ref, entry } = useIntersection({
     root: lastPostRef.current,
     threshold: 1,
   })
+  const { data: session } = useSession()
 
   const { data, fetchNextPage, isFetchingNextPage } = useInfiniteQuery(
     ['infinite-query'],
-    async ({ pageParam = 1}) => {
-      const query = `/api/posts?limit=${INFINITE_SCROLLING_PAGINATION_RESULTS}&page=${pageParam}` +
-      (!!subredditName ? `&subredditName=${subredditName}` : '');
+    async ({ pageParam = 1 }) => {
+      const query =
+        `/api/posts?limit=${INFINITE_SCROLLING_PAGINATION_RESULTS}&page=${pageParam}` +
+        (!!subredditName ? `&subredditName=${subredditName}` : '')
 
-      const { data } = await axios.get(query);
-
+      const { data } = await axios.get(query)
       return data as ExtendedPost[]
     },
+
     {
       getNextPageParam: (_, pages) => {
         return pages.length + 1
       },
       initialData: { pages: [initialPosts], pageParams: [1] },
     }
-  );
+  )
 
-  const posts = data?.pages.flatMap((page) => page) ?? initialPosts;
+  useEffect(() => {
+    if (entry?.isIntersecting) {
+      fetchNextPage() // Load more posts when the last post comes into view
+    }
+  }, [entry, fetchNextPage])
+
+  const posts = data?.pages.flatMap((page) => page) ?? initialPosts
 
   return (
     <ul className='flex flex-col col-span-2 space-y-6'>
@@ -97,4 +103,4 @@ const PostFeed:React.FC<PostFeedProps> = ({
   )
 }
 
-export default PostFeed;
+export default PostFeed
