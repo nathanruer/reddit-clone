@@ -4,6 +4,7 @@ import { Icons } from "./Icons"
 import { buttonVariants } from "./ui/Button"
 import { getAuthSession } from "@/lib/auth"
 import UserAccountNav from "./UserAccountNav"
+import SearchBar from "./SearchBar"
 
 const Navbar = async () => {
   const session = await getAuthSession();
@@ -18,7 +19,7 @@ const Navbar = async () => {
           <p className="hidden text-zinc-700 text-sm font-medium md:block">Reddit</p>
         </Link>
 
-        {/* SearchBar */}
+        <SearchBar />
 
         {session?.user ? (
           <UserAccountNav user={session.user} />
